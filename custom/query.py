@@ -30,6 +30,9 @@ def build_query_engine(index: VectorStoreIndex,
         rag_query_engine = RetrieverQueryEngine.from_args(
             # 自定义prompt Template
             text_qa_template=qa_prompt_tmpl,
+            summary_template=qa_prompt_tmpl,
+            refine_template=qa_prompt_tmpl,
+
             # hybrid search
             retriever=custom_retriever,
             # the target key defaults to `window` to match the node_parser's default
@@ -37,7 +40,7 @@ def build_query_engine(index: VectorStoreIndex,
                 # LLM reranker（注意：使用大模型进行重排序时不保证输出可解析）
                 # LLMRerank(top_n=top_k, llm=Settings.llm),
                 # replace the sentence in each node with its surrounding context.
-                MetadataReplacementPostProcessor(target_metadata_key="window"),
+                # MetadataReplacementPostProcessor(target_metadata_key="window"),
             ],
             # 对上下文进行简单摘要，当上下文较长或检索到的块较多时应使用tree_summary，否则使用simple_summary。
             response_synthesizer=get_response_synthesizer(
@@ -47,9 +50,11 @@ def build_query_engine(index: VectorStoreIndex,
         # Build a tree index over the set of candidate nodes, with a summary prompt seeded with the query. with LLM reranker
         rag_query_engine = index.as_query_engine(similarity_top_k=top_k,
                                                  text_qa_template=qa_prompt_tmpl,
+                                                 summary_template=qa_prompt_tmpl,
+                                                 refine_template=qa_prompt_tmpl,
                                                  node_postprocessors=[
                                                      # LLMRerank(top_n=top_k, llm=Settings.llm),
-                                                     MetadataReplacementPostProcessor(target_metadata_key="window"),
+                                                     # MetadataReplacementPostProcessor(target_metadata_key="window"),
                                                  ],
                                                  response_synthesizer=get_response_synthesizer(
                                                      response_mode=response_mode),

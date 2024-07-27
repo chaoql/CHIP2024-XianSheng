@@ -165,5 +165,9 @@ cython_debug/
 test.ipynb
 submit
 BAAI/
+store01
+store02
+store03
+store04
 
 

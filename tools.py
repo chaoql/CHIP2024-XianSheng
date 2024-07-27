@@ -36,7 +36,7 @@ def printInfo(case_id, core_clinical_info, mechanism_answer, syndrome_answer, cl
         syndrome_answer_str += sa + ';'
     syndrome_answer_str = syndrome_answer_str[:-1]
     print(
-        f"{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}")
+        f"\n{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}\n")
     return f"{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}"
 
 
