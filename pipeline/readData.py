@@ -58,3 +58,68 @@ def read_AJson(input_file):
         infoList.append({"案例编号": case_id, "临床资料": clinical_info, "病机选项": mechanism_options,
                          "证候选项": syndrome_options})
     return infoList
+
+
+def read_traintask1(input_file):
+    # 打开并读取JSON文件
+    with open(input_file, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    infoList = []
+    # 遍历数据中的每个案例
+    for i, case in enumerate(data):
+        clinical_info = case["[临床资料]"]
+        core_clinical_info = case["[核心临床信息]"]
+        infoList.append({"临床资料": clinical_info, "核心临床信息": core_clinical_info})
+    return infoList
+
+
+def read_traintask2(input_file):
+    # 打开并读取JSON文件
+    with open(input_file, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    infoList = []
+    # 遍历数据中的每个案例
+    for i, case in enumerate(data):
+        clinical_info = case["[临床资料]"]
+        core_clinical_info = case["[核心临床信息]"]
+        mechanism_options = case["[病机选项]"]
+        mechanism_inference = case["[病机推断]"]
+        core_mechanism = case["[核心病机]"]
+        mechanism_answer = case["[病机答案]"]
+        infoList.append(
+            {"[临床资料]": clinical_info, "[核心临床信息]": core_clinical_info, "[病机选项]": mechanism_options,
+             "[病机推断]": mechanism_inference, "[核心病机]": core_mechanism, "[病机答案]": mechanism_answer})
+    return infoList
+
+
+def read_traintask3(input_file):
+    # 打开并读取JSON文件
+    with open(input_file, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    infoList = []
+    # 遍历数据中的每个案例
+    for i, case in enumerate(data):
+        core_clinical_info = case["[核心临床信息]"]
+        core_mechanism = case["[核心病机]"]
+        syndrome_inference = case["[证候推断]"]
+        core_syndrome = case["[核心证候]"]
+        syndrome_answer = case["[证候答案]"]
+        syndrome_options = case["[证候选项]"]
+        infoList.append(
+            {"[核心临床信息]": core_clinical_info, "[核心病机]": core_mechanism, "[证候选项]": syndrome_options,
+             "[证候推断]": syndrome_inference, "[核心证候]": core_syndrome, "[证候答案]": syndrome_answer})
+    return infoList
+
+
+def read_traintask4(input_file):
+    # 打开并读取JSON文件
+    with open(input_file, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    infoList = []
+    # 遍历数据中的每个案例
+    for i, case in enumerate(data):
+        clinical_info = case["[临床资料]"]
+        core_mechanism = case["[核心病机]"]
+        clinical_experience = case["[临证体会]"]
+        infoList.append({"[临床资料]": clinical_info, "[核心病机]": core_mechanism, "[临证体会]": clinical_experience})
+    return infoList

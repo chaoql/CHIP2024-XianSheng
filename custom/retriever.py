@@ -50,9 +50,11 @@ class CustomRetriever(BaseRetriever):
         minB = min(bm25_score)
         maxB = max(bm25_score)
         for n in vector_nodes:
-            n.score = (n.score - minV) / (maxV - minV)
+            if maxV - minV != 0:
+                n.score = (n.score - minV) / (maxV - minV)
         for n in keyword_nodes:
-            n.score = (n.score - minB) / (maxB - minB)
+            if maxB - minB != 0:
+                n.score = (n.score - minB) / (maxB - minB)
 
         # for node in vector_nodes:
         #     print(node)
@@ -74,7 +76,7 @@ class CustomRetriever(BaseRetriever):
 
         retrieve_nodes = [combined_dict[rid] for rid in retrieve_ids]
 
-        for node in retrieve_nodes:
-            print(node)
-        print("----------")
+        # for node in retrieve_nodes:
+        #     print(node)
+        # print("----------")
         return retrieve_nodes
