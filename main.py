@@ -43,20 +43,20 @@ if __name__ == '__main__':
     rerank_top_k = 2
     response_mode = ResponseMode.COMPACT  # 最佳实践为为TREE_SUMMARIZE
     hybrid_mode = "OR"
-    submitPath = "submit/sub07.txt"
+    submitPath = "submit/sub09.txt"
     A_file = "data/A榜.json"
     train_file = "data/train.json"
     infoList = readData.read_AJson(A_file)
     if hybrid_search:
-        index1, nodes1 = rag.load_hybrid_data("data/trainTaskTXT1.txt", "store05")
-        index2, nodes2 = rag.load_hybrid_data("data/trainTaskTXT2.txt", "store06")
-        index3, nodes3 = rag.load_hybrid_data("data/trainTaskTXT3.txt", "store07")
-        index4, nodes4 = rag.load_hybrid_data("data/trainTaskTXT4.txt", "store08")
+        index1, nodes1 = rag.load_hybrid_data(["data/trainTaskTXT1.txt"], "store05")
+        index2, nodes2 = rag.load_hybrid_data(["data/trainTaskTXT2.txt"], "store06")
+        index3, nodes3 = rag.load_hybrid_data(["data/trainTaskTXT3.txt"], "store07")
+        index4, nodes4 = rag.load_hybrid_data(["data/trainTaskTXT4.txt"], "store08")
     else:
-        index1, nodes1 = rag.load_data("data/trainTask1.json", "store01")
-        index2, nodes2 = rag.load_data("data/trainTask2WOoptions.json", "store02")
-        index3, nodes3 = rag.load_data("data/trainTask3WOoptions.json", "store03")
-        index4, nodes4 = rag.load_data("data/trainTask4.json", "store04")
+        index1, nodes1 = rag.load_data(["data/trainTask1.json"], "store01")
+        index2, nodes2 = rag.load_data(["data/trainTask2WOoptions.json"], "store02")
+        index3, nodes3 = rag.load_data(["data/trainTask3WOoptions.json", "data/trainExtraData.json"], "store11")
+        index4, nodes4 = rag.load_data(["data/trainTask4.json"], "store04")
     subResult = []
     start_time = time.time()
     print(start_time)

@@ -25,7 +25,7 @@ warnings.filterwarnings('ignore')
 
 
 def load_data(input_file, persist_dir):
-    documents = SimpleDirectoryReader(input_files=[input_file]).load_data()
+    documents = SimpleDirectoryReader(input_files=input_file).load_data()
     node_parser = JSONNodeParser()
     nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
 
@@ -44,7 +44,7 @@ def load_data(input_file, persist_dir):
 
 
 def load_hybrid_data(input_file, persist_dir):
-    documents = SimpleDirectoryReader(input_files=[input_file]).load_data()
+    documents = SimpleDirectoryReader(input_files=input_file).load_data()
     node_parser = JSONNodeParser()
     nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
 
