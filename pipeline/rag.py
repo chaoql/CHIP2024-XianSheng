@@ -63,9 +63,9 @@ def load_hybrid_data(input_file, persist_dir):
     return index, nodes
 
 
-def Build_query_engine(rerank_top_k, hybrid_mode, index, top_k, hybrid_search, nodes, with_hyde, qa_prompt_tmpl):
+def Build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode, index, top_k, hybrid_search, nodes, with_hyde, qa_prompt_tmpl):
     # qa_prompt_tmpl = PromptTemplate(qa_prompt_tmpl)
-    rag_query_engine = build_query_engine(rerank_top_k, hybrid_mode, index, ResponseMode.TREE_SUMMARIZE, qa_prompt_tmpl,
+    rag_query_engine = build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode, index, ResponseMode.TREE_SUMMARIZE, qa_prompt_tmpl,
                                           hybrid_search, top_k, nodes)
 
     # HyDE(当问题较为简单时，不需要该模块参与)
