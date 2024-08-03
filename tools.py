@@ -6,11 +6,14 @@ def select_answers_parse(str, fstr):
     """
     截取字符串str中特定字符串fstr之后的答案，并删除首尾换行符和之间的空格
     """
-    num = str.find(fstr)
+    strtemp = str
+    num = strtemp.rfind(fstr)
     pattern = r"[A-Z]"
     # 有的选项最后一个没有分号，匹配不上
     matches = re.findall(pattern, str[num + len(fstr):])
-
+    if not matches:
+        num = strtemp[0:num].rfind(fstr)
+        matches = re.findall(pattern, str[num + len(fstr):])
     result_list = []
     for match in matches:
         if match.strip() not in result_list:

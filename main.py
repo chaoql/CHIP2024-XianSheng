@@ -39,11 +39,11 @@ if __name__ == '__main__':
     persist_dir = "storeQ"  # 向量存储地址
     hybrid_search = False  # 是否采用混合检索
     with_LLMrerank = True
-    top_k = 5
-    rerank_top_k = 2
+    top_k = 10
+    rerank_top_k = 3
     response_mode = ResponseMode.COMPACT  # 最佳实践为为TREE_SUMMARIZE
     hybrid_mode = "OR"
-    submitPath = "submit/sub09.txt"
+    submitPath = "submit/sub20.txt"
     A_file = "data/A榜.json"
     train_file = "data/train.json"
     infoList = readData.read_AJson(A_file)

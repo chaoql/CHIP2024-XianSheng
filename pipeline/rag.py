@@ -27,7 +27,7 @@ warnings.filterwarnings('ignore')
 def load_data(input_file, persist_dir):
     documents = SimpleDirectoryReader(input_files=input_file).load_data()
     node_parser = JSONNodeParser()
-    nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
+    nodes = node_parser.get_nodes_from_documents(documents, show_progress=True)
 
     # indexing & storing
     try:
@@ -38,7 +38,7 @@ def load_data(input_file, persist_dir):
         )
         index = load_index_from_storage(storage_context)
     except:
-        index = VectorStoreIndex(nodes=nodes)
+        index = VectorStoreIndex(nodes=nodes, show_progress=True)
         index.storage_context.persist(persist_dir=persist_dir)
     return index, nodes
 
@@ -46,7 +46,7 @@ def load_data(input_file, persist_dir):
 def load_hybrid_data(input_file, persist_dir):
     documents = SimpleDirectoryReader(input_files=input_file).load_data()
     node_parser = JSONNodeParser()
-    nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
+    nodes = node_parser.get_nodes_from_documents(documents, show_progress=True)
 
     # 创建一个持久化的索引到磁盘
     client = QdrantClient(path=persist_dir)
@@ -59,6 +59,7 @@ def load_hybrid_data(input_file, persist_dir):
     index = VectorStoreIndex.from_documents(
         documents,
         storage_context=storage_context,
+        show_progress=True,
     )
     return index, nodes
 
