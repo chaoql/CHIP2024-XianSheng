@@ -55,11 +55,25 @@ def build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode,
     else:
         if with_LLMrerank:
             # Build a tree index over the set of candidate nodes, with a summary prompt seeded with the query. with LLM reranker
+            retriever = VectorIndexRetriever(
+                index=index,
+                similarity_top_k=top_k,
+            )
+
+            # assemble query engine
+            rag_query_engine = RetrieverQueryEngine.from_args(
+                retriever=retriever,
+                node_postprocessors=[LLMRerank(top_n=rerank_top_k, llm=Settings.llm,
+                                               choice_select_prompt=choice_select_prompt)],
+                text_qa_template=qa_prompt_tmpl,
+            )
+
             rag_query_engine = index.as_query_engine(similarity_top_k=top_k,
                                                      text_qa_template=qa_prompt_tmpl,
                                                      node_postprocessors=[
                                                          LLMRerank(top_n=rerank_top_k, llm=Settings.llm,
                                                                    choice_select_prompt=choice_select_prompt)],
+                                                     response_mode=ResponseMode.SIMPLE_SUMMARIZE,
                                                      # response_synthesizer=get_response_synthesizer(
                                                      #     response_mode=response_mode,
                                                      #     refine_template=PromptTemplate(refine_tmpl_str)),

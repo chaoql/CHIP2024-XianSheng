@@ -1,5 +1,6 @@
 import re
 import json
+import os
 
 
 def select_answers_parse(str, fstr):
@@ -10,7 +11,10 @@ def select_answers_parse(str, fstr):
     num = strtemp.rfind(fstr)
     pattern = r"[A-Z]"
     # 有的选项最后一个没有分号，匹配不上
-    matches = re.findall(pattern, str[num + len(fstr):])
+    if num != -1:
+        matches = re.findall(pattern, str[num + len(fstr):])
+    else:
+        matches = re.findall(pattern, str)
     if not matches:
         num = strtemp[0:num].rfind(fstr)
         matches = re.findall(pattern, str[num + len(fstr):])
@@ -76,7 +80,7 @@ def saveTxt(submitPath, subResult):
 
 
 def save_now(result, path):
-    with open(path, 'a') as file:
+    with open(path, 'a', encoding="utf-8", errors="ignore") as file:
         file.write(result)
         file.write("\n")
 

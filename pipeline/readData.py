@@ -50,11 +50,8 @@ def read_AJson(input_file):
     for i, case in enumerate(data):
         case_id = case["案例编号"]
         clinical_info = case["临床资料"]
-        mechanism_answer = case["病机答案"]
         mechanism_options = case["病机选项"]
-        syndrome_answer = case["证候答案"]
         syndrome_options = case["证候选项"]
-        clinical_experience = case["临证体会"]
         infoList.append({"案例编号": case_id, "临床资料": clinical_info, "病机选项": mechanism_options,
                          "证候选项": syndrome_options})
     return infoList
