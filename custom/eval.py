@@ -10,6 +10,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core import Settings
 from custom.glmfz import ChatGLM
+from custom.kimi import ChatKIMI
 from llama_index.llms.openai import OpenAI
 from rouge_chinese import Rouge
 import jieba
@@ -128,9 +129,16 @@ def evalTask4(result, train_path):
 _ = load_dotenv(find_dotenv())  # 导入环境
 config = dotenv_values(".env")
 # 加载嵌入模型
+# Settings.embed_model = HuggingFaceEmbedding(
+#     model_name="BAAI/bge-large-zh-v1.5",
+#     cache_folder="./BAAI/",
+#     embed_batch_size=128,
+#     local_files_only=True,  # 仅加载本地模型，不尝试下载
+#     device="cuda",
+# )
 Settings.embed_model = HuggingFaceEmbedding(
-    model_name="BAAI/bge-large-zh-v1.5",
-    cache_folder="./BAAI/",
+    model_name="lier007/xiaobu-embedding-v2",
+    cache_folder="BAAI/",
     embed_batch_size=128,
     local_files_only=True,  # 仅加载本地模型，不尝试下载
     device="cuda",
@@ -143,6 +151,8 @@ Settings.llm = ChatGLM(
     is_chat_model=True,
     context_window=6000,
 )
+
+
 # Settings.llm = OpenAI(model="gpt-4o")
 
 # from llama_index.llms.dashscope import DashScope, DashScopeGenerationModels
@@ -209,14 +219,14 @@ for i, case in enumerate(data):
 # index2, nodes2 = rag.load_hybrid_data(["data/bjtrain02ExtraData.json"], "store/hybrid_eval02_2_extra")
 
 # index2, nodes2 = rag.load_data(["data/evalTrainTask2_2.json"], "store/eval02_2")
-# index2, nodes2 = rag.load_data(["data/evalTrainTask2_3.json"], "store/eval02_3")
+index2, nodes2 = rag.load_data(["data/evalTrainTask2_3.json"], "store/xiaobu_eval02_3")
 # index2, nodes2 = rag.load_txt_data(
 #     ["extra_data/doctor/中医内科学.txt", "extra_data/doctor/中医基础理论.txt", "extra_data/doctor/中医诊断学.txt"],
 #     "store/eval02_doctor")
 
 
-# index3, nodes3 = rag.load_data(["data/evalTrainTask3.json", "data/trainExtraData.json"],
-#                                "store/eval03")
+index3, nodes3 = rag.load_data(["data/evalTrainTask3.json", "data/trainExtraData.json"],
+                               "store/xiaobu_eval03")
 
 # index3, nodes3 = rag.load_data(
 #     ["data/zntrain3.json", "data/evalTrainTask3.json", "data/trainExtraDataTask2.json",
@@ -230,15 +240,15 @@ for i, case in enumerate(data):
 # index3, nodes3 = rag.load_data(
 #     ["data/trainTask3WOoptions.json", "data/trainExtraData.json", "data/bjtrain02ExtraData.json"],
 #     "store/storeExtra01")
-
+#
 from llama_index.core import PromptTemplate, get_response_synthesizer, StorageContext, VectorStoreIndex, \
     SimpleDirectoryReader, Settings
 from llama_index.core.node_parser import JSONNodeParser
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import load_index_from_storage
 
-top_k = 10
-rerank_top_k = 3
+top_k = 5
+rerank_top_k = 2
 documents = SimpleDirectoryReader(input_files=["data/trainTask4.json"]).load_data()
 node_parser = JSONNodeParser()
 nodes4_1 = node_parser.get_nodes_from_documents(documents, show_progress=True)
@@ -249,12 +259,12 @@ nodes4_2 = node_parser.get_nodes_from_documents(documents, show_progress=True)
 nodes4 = nodes4_1 + nodes4_2
 # indexing & storing
 try:
-    storage_context = StorageContext.from_defaults(persist_dir="store/store04_4")
+    storage_context = StorageContext.from_defaults(persist_dir="store/xiaohu_store04_4")
     index4 = load_index_from_storage(storage_context, show_progress=True)
 except:
     index4 = VectorStoreIndex(nodes=nodes4, show_progress=True)
-    index4.storage_context.persist(persist_dir="store/store04_4")
-# index4, nodes4 = rag.load_data(["data/trainTask4.json"], "store/store04")
+    index4.storage_context.persist(persist_dir="store/xiaohu_store04_4")
+# index4, nodes4 = rag.load_data(["data/trainTask4_2.json"], "store/store04")
 
 # 生成答案
 # solution.task1Solution(infoList, False, rerank_top_k, hybrid_mode, index1, top_k, hybrid_search,

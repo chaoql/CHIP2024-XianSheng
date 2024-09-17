@@ -22,8 +22,7 @@ from custom.prompt import choice_select_prompt_str
 choice_select_prompt = PromptTemplate(choice_select_prompt_str)
 
 
-def build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode,
-                       index: VectorStoreIndex,
+def build_query_engine(with_LLMrerank, rerank_top_k, index: VectorStoreIndex,
                        response_mode: ResponseMode = ResponseMode.TREE_SUMMARIZE,
                        qa_prompt_tmpl: Optional[BasePromptTemplate] = None,
                        hybrid_search: bool = False,

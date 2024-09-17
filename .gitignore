@@ -168,6 +168,9 @@ fine-tuning-data.ipynb
 low-level_rag.ipynb
 post_g.ipynb
 submit
+final_store
+final_store_xiaobu
+final_submit
 BAAI/
 store
 data
@@ -180,7 +183,6 @@ ft_sub
 病机_upd
 tcmoc
 llsub
-FTdata
-ft_sub
-fine-tuning
-extra_data
+xiaobu_store
+post_g.ipynb
+main_test.py

@@ -60,9 +60,9 @@ if __name__ == '__main__':
     with_LLMrerank = True
     top_k = 5
     rerank_top_k = 2
-    r_nums = 5  # 循环次数
+    r_nums = 10  # 循环次数
     response_mode = ResponseMode.TREE_SUMMARIZE  # 最佳实践为为TREE_SUMMARIZE
-    submitPath = "final_submit/sub_1.txt"
+    submitPath = "final_submit/sub_3.txt"
     A_file = "data/B榜.json"
     train_file = "data/train.json"
     infoList = readData.read_AJson(A_file)
@@ -108,6 +108,31 @@ if __name__ == '__main__':
 [核心病机]: 
 [病机答案]: 
 """
+    # if hybrid_search:
+    #     index1, nodes1 = rag.load_hybrid_data(["data/trainTask1.json"], "final_store_xiaobu/hybrid_store01")
+    #     # index2, nodes2 = rag.load_data(["data/bjtrain02ExtraData.json"], "store/eval02_2_extra")
+    #     index2, nodes2 = rag.load_hybrid_data(["data/trainTask2WOoptions2.json"], "final_store_xiaobu/hybrid_store02_1")
+    #     index2R, nodes2R = rag.load_hybrid_data(["data/trainTask2WOoptions3.json"],
+    #                                             "final_store_xiaobu/hybrid_store02_2")
+    #
+    #     index3, nodes3 = rag.load_hybrid_data(["data/trainTask3WOoptions.json", "data/trainExtraData.json"],
+    #                                           "final_store_xiaobu/hybrid_store03")
+    #     index4, nodes4 = rag.load_json_text_hybrid_data(
+    #         ["data/trainTask4.json"],
+    #         ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
+    #          "extra_data/doctor/中医基础理论.txt"], "final_store_xiaobu/hybrid_store04")
+    # else:
+    #     index1, nodes1 = rag.load_data(["data/trainTask1.json"], "final_store_xiaobu/store01")
+    #     # index2, nodes2 = rag.load_data(["data/bjtrain02ExtraData.json"], "store/eval02_2_extra")
+    #     index2, nodes2 = rag.load_data(["data/trainTask2WOoptions2.json"], "final_store_xiaobu/store02_1")
+    #     index2R, nodes2R = rag.load_data(["data/trainTask2WOoptions3.json"], "final_store_xiaobu/store02_2")
+    #
+    #     index3, nodes3 = rag.load_data(["data/trainTask3WOoptions.json", "data/trainExtraData.json"],
+    #                                    "final_store_xiaobu/store03")
+    #     index4, nodes4 = rag.load_json_text_data(
+    #         ["data/trainTask4.json"],
+    #         ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
+    #          "extra_data/doctor/中医基础理论.txt"], "final_store_xiaobu/store04")
     if hybrid_search:
         index1, nodes1 = rag.load_hybrid_data(["data/trainTask1.json"], "final_store/hybrid_store01")
         # index2, nodes2 = rag.load_data(["data/bjtrain02ExtraData.json"], "store/eval02_2_extra")
@@ -130,7 +155,8 @@ if __name__ == '__main__':
                                        "final_store/store03")
         index4, nodes4 = rag.load_json_text_data(
             ["data/trainTask4.json"],
-            ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt", "extra_data/doctor/中医基础理论.txt"],
+            ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
+             "extra_data/doctor/中医基础理论.txt"],
             "final_store/store04")
 
     subResult = []
@@ -142,17 +168,17 @@ if __name__ == '__main__':
             lines = file.readlines()
             resnum = len(lines)
 
-    # task1_ans = []
-    # task2_ans = []
-    # task3_ans = []
-    # task4_ans = []
-    # with open("submit/sub42.txt", 'r', encoding="utf-8", errors="ignore") as file:
-    #     temp = file.readlines()
-    # for i in temp:
-    #     task1_ans.append(i.split("@")[1].rstrip())
-    #     task2_ans.append(i.split("@")[2].rstrip())
-    #     task3_ans.append(i.split("@")[3].rstrip())
-    #     task4_ans.append(i.split("@")[4].rstrip())
+    task1_ans = []
+    task2_ans = []
+    task3_ans = []
+    task4_ans = []
+    with open("final_submit/sub_1.txt", 'r', encoding="utf-8", errors="ignore") as file:
+        temp = file.readlines()
+    for i in temp:
+        task1_ans.append(i.split("@")[1].rstrip())
+        task2_ans.append(i.split("@")[2].rstrip())
+        task3_ans.append(i.split("@")[3].rstrip())
+        task4_ans.append(i.split("@")[4].rstrip())
 
     for i, info in tqdm(enumerate(infoList), total=len(infoList)):
         if i < resnum:
@@ -161,6 +187,23 @@ if __name__ == '__main__':
         clinical_info = info["临床资料"]
         mechanism_options = info["病机选项"]
         syndrome_options = info["证候选项"]
+
+        # 直接读取答案，调试用
+        # core_clinical_info_str = task1_ans[i]
+        # tools.printf(f"core_clinical_info_str:{core_clinical_info_str}")
+        #
+        # mechanism_answer = task2_ans[i].split(";")
+        # mechanism_str = tools.extract_core_mechanism(mechanism_options, mechanism_answer)
+        # tools.printf(mechanism_str)
+        #
+        # syndrome_answer = task3_ans[i].split(";")
+        # syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
+        # tools.printf(syndrome_answer_str)
+        #
+        # task4 = task4_ans[i]
+        # clinical_experience_str = task4.split("辨证")[0].replace("临证体会：", "")
+        # diagnosis_str = task4.split("辨证")[1].replace("辨证：", "").replace("：", "")
+
         # task1
         qa_clinical_info_prompt_tmpl_str = """你是一名中医专家，请按照检索到的案例的格式回答当前临床资料中包含的[核心临床信息]。
 要求[核心临床信息]必须包含病人的临床症状、病症名称、舌象、脉象等任何与临床相关的实体。
@@ -184,6 +227,7 @@ if __name__ == '__main__':
         tools.printf(f"core_clinical_info:{core_clinical_info}")
         # core_clinical_info = task1_ans[i]
         # tools.printf(f"core_clinical_info:{core_clinical_info}")
+
         all_clinical_info_prompt_tmpl_str = """请抽取如下临床资料中与临床相关的所有实体，不包含姓名。答案只列出以”;“分隔的实体，不含任何换行符等无关字符。
 [临床资料]: {clinical_info}
 """
@@ -207,48 +251,46 @@ if __name__ == '__main__':
                 core_clinical_info_result.append(info)
                 core_clinical_info_str += info + ";"
         print(len(core_clinical_info_result))
-        # core_clinical_info_str = task1_ans[i]
-        # tools.printf(f"core_clinical_info_str:{core_clinical_info_str}")
-        # core_clinical_info = task1_ans[i]
-        # tools.printf(f"core_clinical_info:{core_clinical_info}")
 
         global syndrome_answer_str
         global syndrome_answer
 
         for i in range(r_nums):
             # task2
-            if i == 0:
-                qa_core_mechanism_prompt_tmpl_str_temp = qa_core_mechanism_prompt_tmpl_str.format(
-                    context_str="{context_str}",
-                    core_clinical_info=core_clinical_info,
-                    mechanism_options=mechanism_options,
-                )
-                prompt2 = PromptTemplate(qa_core_mechanism_prompt_tmpl_str_temp)
-                rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2, top_k, response_mode,
-                                                          hybrid_search, nodes2, with_hyde, qa_prompt_tmpl=prompt2)
-                response = rag_query_engine.query(core_clinical_info)  #
-            else:
-                syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
-                qa_core_mechanism_prompt_tmpl_str_temp = new_qa_core_mechanism_prompt_tmpl_str.format(
-                    context_str="{context_str}",
-                    core_clinical_info=core_clinical_info,
-                    mechanism_options=mechanism_options,
-                    syndrome_answer_str=syndrome_answer_str
-                )
-                prompt2 = PromptTemplate(qa_core_mechanism_prompt_tmpl_str_temp)
-                rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2R, top_k, response_mode,
-                                                          hybrid_search, nodes2R, with_hyde, qa_prompt_tmpl=prompt2)
-                response = rag_query_engine.query(syndrome_answer_str)
+            try:
+                if i == 0:
+                    qa_core_mechanism_prompt_tmpl_str_temp = qa_core_mechanism_prompt_tmpl_str.format(
+                        context_str="{context_str}",
+                        core_clinical_info=core_clinical_info,
+                        mechanism_options=mechanism_options,
+                    )
+                    prompt2 = PromptTemplate(qa_core_mechanism_prompt_tmpl_str_temp)
+                    rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2, top_k, response_mode,
+                                                              hybrid_search, nodes2, with_hyde, qa_prompt_tmpl=prompt2)
+                    response = rag_query_engine.query(core_clinical_info)  #
+                else:
+                    syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
+                    qa_core_mechanism_prompt_tmpl_str_temp = new_qa_core_mechanism_prompt_tmpl_str.format(
+                        context_str="{context_str}",
+                        core_clinical_info=core_clinical_info,
+                        mechanism_options=mechanism_options,
+                        syndrome_answer_str=syndrome_answer_str
+                    )
+                    prompt2 = PromptTemplate(qa_core_mechanism_prompt_tmpl_str_temp)
+                    rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2R, top_k, response_mode,
+                                                              hybrid_search, nodes2R, with_hyde, qa_prompt_tmpl=prompt2)
+                    response = rag_query_engine.query(syndrome_answer_str)
 
-            mechanism_answer = str(response)
-            tools.printf(f"mechanism_answer:{mechanism_answer}")
-            mechanism_answer = tools.select_answers_parse(mechanism_answer, "病机答案")
-            tools.printf(mechanism_answer)
-            mechanism_str = tools.extract_core_mechanism(mechanism_options, mechanism_answer)
-            tools.printf(mechanism_str)
-            # mechanism_answer = task2_ans[i].split(";")
-            # mechanism_str = tools.extract_core_mechanism(mechanism_options, mechanism_answer)
-            # tools.printf(mechanism_str)
+                mechanism_answer = str(response)
+                tools.printf(f"mechanism_answer:{mechanism_answer}")
+                mechanism_answer = tools.select_answers_parse(mechanism_answer, "病机答案")
+                tools.printf(mechanism_answer)
+                mechanism_str = tools.extract_core_mechanism(mechanism_options, mechanism_answer)
+                tools.printf(mechanism_str)
+            except Exception as e:
+                mechanism_answer = task2_ans[i].split(";")
+                mechanism_str = tools.extract_core_mechanism(mechanism_options, mechanism_answer)
+                tools.printf(mechanism_str)
 
             # task3
             qa_syndrome_infer_prompt_tmpl_str = """
@@ -271,8 +313,8 @@ if __name__ == '__main__':
 [核心临床信息]: {core_clinical_info}
 [核心病机]: {mechanism_str}
 [证候选项]: {syndrome_options}
-[核心证候]: 
-[证候答案]: 
+[核心证候]:
+[证候答案]:
 """
             qa_syndrome_infer_prompt_tmpl_str_temp = qa_syndrome_infer_prompt_tmpl_str.format(
                 context_str="{context_str}",
@@ -282,50 +324,43 @@ if __name__ == '__main__':
             prompt3 = PromptTemplate(qa_syndrome_infer_prompt_tmpl_str_temp)
             rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index3, top_k, response_mode,
                                                       hybrid_search, nodes3, with_hyde, qa_prompt_tmpl=prompt3)
-            response = rag_query_engine.query(mechanism_str + core_clinical_info)
-            for node in response.source_nodes:
-                tools.printf(node.text)
-            syndrome_answer = str(response)
-            tools.printf(f"syndrome_answer:{syndrome_answer}")
-            syndrome_answer = tools.select_answers_parse(syndrome_answer, "证候答案")
-            tools.printf(syndrome_answer)
-            syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
-            tools.printf(syndrome_answer_str)
-            # syndrome_answer = task3_ans[i].split(";")
-            # syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
-            # tools.printf(syndrome_answer_str)
+            try:
+                response = rag_query_engine.query(mechanism_str + core_clinical_info)
+                for node in response.source_nodes:
+                    tools.printf(node.text)
+                syndrome_answer = str(response)
+                tools.printf(f"syndrome_answer:{syndrome_answer}")
+                syndrome_answer = tools.select_answers_parse(syndrome_answer, "证候答案")
+                tools.printf(syndrome_answer)
+                syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
+                tools.printf(syndrome_answer_str)
+            except Exception as e:
+                syndrome_answer = task3_ans[i].split(";")
+                syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
+                tools.printf(syndrome_answer_str)
 
         # task4
-#         qa_clinical_exp_prompt_tmpl_str = """
-# 你是一名中医专家，请参考过往相关案例信息，根据[临床资料]和[核心病机]得出[临证体会]。
-#
-# ---------------------
-# {context_str}
-# ---------------------
-#
-# [临床资料]: {clinical_info}
-# [核心病机]: {mechanism_str}
-# [临证体会]:
-# """
         qa_clinical_exp_prompt_tmpl_str_temp = qa_clinical_exp_prompt_tmpl_str.format(context_str="{context_str}",
                                                                                       clinical_info=clinical_info,
                                                                                       mechanism_str=mechanism_str)
         prompt4 = PromptTemplate(qa_clinical_exp_prompt_tmpl_str_temp)
         rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index4, top_k, response_mode,
                                                   hybrid_search, nodes4, with_hyde, qa_prompt_tmpl=prompt4)
-        response = rag_query_engine.query(mechanism_str)
-        clinical_experience_str = str(response).replace("\n", "")
-        tools.printf(f"clinical_experience_str:{clinical_experience_str}")
-        diagnosis = syndrome_answer_str.split(";")
-        diagnosis_str = ""
-        for d in diagnosis:
-            if d:
-                diagnosis_str += d + '，'
-        diagnosis_str = diagnosis_str[:-1]
-        tools.printf(diagnosis_str)
-        # task4 = task4_ans[i]
-        # clinical_experience_str = task4.split("辨证")[0].replace("临证体会：", "")
-        # diagnosis_str = task4.split("辨证")[1].replace("辨证：", "").replace("：", "")
+        try:
+            response = rag_query_engine.query(mechanism_str)
+            clinical_experience_str = str(response).replace("\n", "")
+            tools.printf(f"clinical_experience_str:{clinical_experience_str}")
+            diagnosis = syndrome_answer_str.split(";")
+            diagnosis_str = ""
+            for d in diagnosis:
+                if d:
+                    diagnosis_str += d + '，'
+            diagnosis_str = diagnosis_str[:-1]
+            tools.printf(diagnosis_str)
+        except Exception as e:
+            task4 = task4_ans[i]
+            clinical_experience_str = task4.split("辨证")[0].replace("临证体会：", "")
+            diagnosis_str = task4.split("辨证")[1].replace("辨证：", "").replace("：", "")
 
         resultAll = tools.printInfo(case_id, core_clinical_info_str, mechanism_answer, syndrome_answer,
                                     clinical_experience_str, diagnosis_str)

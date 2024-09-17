@@ -36,5 +36,6 @@ def enseTask1(submitPath, llmsubmit_path, A_path):
             file.write(item)
 
 
-enseTask1(submitPath="submit/sub40.txt", llmsubmit_path="submit/sub39.txt", A_path="data/A榜.json")
+enseTask1(submitPath="submit/sub54.txt", llmsubmit_path="submit/sub53.txt", A_path="data/A榜.json")
+
 

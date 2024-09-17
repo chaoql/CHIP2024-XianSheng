@@ -107,6 +107,8 @@ def task2Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, to
     if os.path.exists(submitPath + "-3.txt"):
         with open(submitPath + "-3.txt", 'r', encoding='utf-8', errors="ignore") as file:
             lines3 = file.readlines()
+    else:
+        lines3 = []
     resultList = []
     for i, info in tqdm(enumerate(infoList), total=len(infoList)):
         if i > 50:
@@ -317,10 +319,17 @@ def task4Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, to
         with open(submitPath + "-3.txt", 'r', encoding='utf-8', errors="ignore") as file:
             lines = file.readlines()
             resnum = len(lines)
+    if os.path.exists(submitPath + "-4.txt"):
+        with open(submitPath + "-4.txt", 'r', encoding='utf-8', errors="ignore") as file:
+            lines2 = file.readlines()
+    else:
+        lines2 = []
     resultList = []
     for i, info in tqdm(enumerate(infoList), total=len(infoList)):
-        # if i < resnum:
-        #     continue
+        if i > 50:
+            break
+        if i < len(lines2):
+            continue
         case_id = info["案例编号"]
         clinical_info = info["临床资料"]
         mechanism_options = info["病机选项"]
@@ -348,11 +357,12 @@ def task4Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, to
 """
         qa_clinical_exp_prompt_tmpl_str_temp = qa_clinical_exp_prompt_tmpl_str.format(context_str="{context_str}",
                                                                                       core_clinical_info=core_clinical_info,
-                                                                                      mechanism_str=mechanism_str)
+                                                                                      mechanism_str=mechanism_str
+                                                                                      )
         prompt4 = PromptTemplate(qa_clinical_exp_prompt_tmpl_str_temp)
         rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode, index, top_k,
                                                   hybrid_search, nodes, with_hyde, qa_prompt_tmpl=prompt4)
-        response = rag_query_engine.query(mechanism_str + syndrome_str)
+        response = rag_query_engine.query(mechanism_str)
         clinical_experience_str = str(response).replace("\n", "")
         tools.printf(f"clinical_experience_str:{clinical_experience_str}")
         diagnosis = syndrome_str.split(";")
@@ -364,8 +374,9 @@ def task4Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, to
         tools.printf(diagnosis_str)
         resultList.append(
             f"{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}")
-        tools.save_now(f"{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}",
-                       submitPath + "-4.txt")
+        tools.save_now(
+            f"{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}",
+            submitPath + "-4.txt")
     with open(submitPath + "-4.txt", "w", encoding="utf-8") as file:
         for item in resultList:
             file.write(item + '\n')
