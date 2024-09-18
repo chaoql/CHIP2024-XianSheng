@@ -47,9 +47,16 @@ if __name__ == '__main__':
     # Settings.llm = DashScope(
     #     model_name=DashScopeGenerationModels.QWEN_TURBO, api_key=config["DASHSCOPE_API_KEY"], max_tokens=1024
     # )
+
+    # Settings.llm = ChatGLM(
+    #     api_key=config["GLM_KEY"],
+    #     model="glm-4-0520",
+    #     api_base="https://open.bigmodel.cn/api/paas/v4/",
+    #     is_chat_model=True,
+    # )
     Settings.llm = ChatGLM(
         api_key=config["GLM_KEY"],
-        model="glm-4-0520",
+        model="glm-4-plus",
         api_base="https://open.bigmodel.cn/api/paas/v4/",
         is_chat_model=True,
     )
@@ -62,7 +69,7 @@ if __name__ == '__main__':
     rerank_top_k = 2
     r_nums = 10  # 循环次数
     response_mode = ResponseMode.TREE_SUMMARIZE  # 最佳实践为为TREE_SUMMARIZE
-    submitPath = "final_submit/sub_3.txt"
+    submitPath = "final_submit/sub_5.txt"
     A_file = "data/B榜.json"
     train_file = "data/train.json"
     infoList = readData.read_AJson(A_file)
@@ -172,7 +179,7 @@ if __name__ == '__main__':
     task2_ans = []
     task3_ans = []
     task4_ans = []
-    with open("final_submit/sub_1.txt", 'r', encoding="utf-8", errors="ignore") as file:
+    with open("final_submit/sub_3.txt", 'r', encoding="utf-8", errors="ignore") as file:
         temp = file.readlines()
     for i in temp:
         task1_ans.append(i.split("@")[1].rstrip())
