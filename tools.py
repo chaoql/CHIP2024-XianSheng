@@ -30,6 +30,25 @@ def printf(obj):
     print("-" * 40)
 
 
+def printInfo_test(case_id, core_clinical_info, mechanism_answer, syndrome_answer, clinical_experience_str,
+                   diagnosis_str, sorted_repeat_mechanism_dict, sorted_repeat_syndrome_dict):
+    """
+    打印当前对象的所有子任务结果
+    :return:
+    """
+    mechanism_answer_str = ""
+    for ma in mechanism_answer:
+        mechanism_answer_str += ma + ';'
+    mechanism_answer_str = mechanism_answer_str[:-1]
+    syndrome_answer_str = ""
+    for sa in syndrome_answer:
+        syndrome_answer_str += sa + ';'
+    syndrome_answer_str = syndrome_answer_str[:-1]
+    print(
+        f"\n{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}@{sorted_repeat_mechanism_dict}@{sorted_repeat_syndrome_dict}\n")
+    return f"{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}@{sorted_repeat_mechanism_dict}@{sorted_repeat_syndrome_dict}"
+
+
 def printInfo(case_id, core_clinical_info, mechanism_answer, syndrome_answer, clinical_experience_str, diagnosis_str):
     """
     打印当前对象的所有子任务结果

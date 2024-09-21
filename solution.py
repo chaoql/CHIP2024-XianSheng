@@ -13,7 +13,7 @@ import json
 
 
 def task1Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, top_k, hybrid_search, nodes,
-                  with_hyde, submitPath):
+                  with_hyde, submitPath, response_mode):
     resultList = []
     resnum = 0
     with open("data/train.json", 'r', encoding='utf-8', errors='ignore') as file:
@@ -50,20 +50,23 @@ def task1Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, to
         qa_clinical_info_prompt_tmpl_str_temp = new_clinical_info_prompt_tmpl_str.format(context_str="{context_str}",
                                                                                          clinical_info=clinical_info)
         prompt1 = PromptTemplate(qa_clinical_info_prompt_tmpl_str_temp)
-        rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode, index, top_k,
+        rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index, top_k, response_mode,
                                                   hybrid_search, nodes, with_hyde, qa_prompt_tmpl=prompt1)
         response = rag_query_engine.query(clinical_info)
         core_clinical_info = str(response)
         printf(f"clinical_info:{clinical_info}")
         printf(f"core_clinical_info:{core_clinical_info}")
 
-        all_clinical_info_prompt_tmpl_str = """请抽取如下临床资料中与临床相关的所有实体。答案只列出以”;“分隔的实体，不含任何换行符等无关字符。
+        all_clinical_info_prompt_tmpl_str = """请抽取如下[临床资料]中所有的实体。答案只列出以”;“分隔的实体，不含任何换行符等无关字符。
 [临床资料]: {clinical_info}
 """
         all_clinical_info_prompt_tmpl_str_temp = all_clinical_info_prompt_tmpl_str.format(clinical_info=clinical_info)
         prompt1_1 = PromptTemplate(all_clinical_info_prompt_tmpl_str_temp)
-        rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode, index, top_k,
+        from llama_index.core.response_synthesizers.type import ResponseMode
+        rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index, top_k,
+                                                  ResponseMode.SIMPLE_SUMMARIZE,
                                                   hybrid_search, nodes, with_hyde, qa_prompt_tmpl=prompt1_1)
+
         response1_1 = rag_query_engine.query(clinical_info)
 
         # from langchain.prompts import ChatPromptTemplate
@@ -311,8 +314,11 @@ def task3Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, to
             file.write(item + '\n')
 
 
-def task4Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, top_k, hybrid_search, nodes,
-                  with_hyde, submitPath):
+from llama_index.core.indices.vector_store.base import VectorStoreIndex
+
+
+def task4Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index: VectorStoreIndex, top_k, hybrid_search,
+                  nodes, with_hyde, submitPath, response_mode):
     resnum = 0
     lines = []
     if os.path.exists(submitPath + "-3.txt"):
@@ -344,34 +350,66 @@ def task4Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index, to
         syndrome_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
         qa_clinical_exp_prompt_tmpl_str = """
 你是一名中医专家，请参考检索到的上下文和案例，根据患者的[临床资料]和[核心病机]撰写辨证摘要，即[临证体会]。
-这是一个辨别证型的一个思考过程，突出分析病机的过程。
-要求语言简洁凝练，尽量用一两句话总结。
+这是一个根据患者临床表现辨别病机的一个思考过程，不包含任何治疗和用药信息。
+要求语言简洁凝练，输出内容少于100字，无换行。
 
 ---------------------
 {context_str}
 ---------------------
 
-[核心临床信息]: {core_clinical_info}
+[临床信息]: {clinical_info}
 [核心病机]: {mechanism_str}
 [临证体会]: 
 """
+        #         qa_clinical_exp_prompt_tmpl_str = """
+        # 你是一名中医专家，请参考过往相关案例信息，根据[临床资料]和[核心病机]得出[临证体会]。要求[临证体会]只有一句话，且不能包含换行符。
+        # ---------------------
+        # {context_str}
+        # ---------------------
+        # [临床资料]: {clinical_info}
+        # [核心病机]: {mechanism_str}
+        # [临证体会]:
+        # """
+
         qa_clinical_exp_prompt_tmpl_str_temp = qa_clinical_exp_prompt_tmpl_str.format(context_str="{context_str}",
-                                                                                      core_clinical_info=core_clinical_info,
-                                                                                      mechanism_str=mechanism_str
-                                                                                      )
+                                                                                      clinical_info=clinical_info,
+                                                                                      mechanism_str=mechanism_str)
         prompt4 = PromptTemplate(qa_clinical_exp_prompt_tmpl_str_temp)
-        rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, hybrid_mode, index, top_k,
+        rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index, top_k, response_mode,
                                                   hybrid_search, nodes, with_hyde, qa_prompt_tmpl=prompt4)
         response = rag_query_engine.query(mechanism_str)
+        print(response)
         clinical_experience_str = str(response).replace("\n", "")
         tools.printf(f"clinical_experience_str:{clinical_experience_str}")
-        diagnosis = syndrome_str.split(";")
-        diagnosis_str = ""
-        for d in diagnosis:
-            if d:
-                diagnosis_str += d + '，'
-        diagnosis_str = diagnosis_str[:-1]
-        tools.printf(diagnosis_str)
+
+        qa_diagnosis_prompt_tmpl_str = """
+你是一名中医专家，请参考过往相关案例信息，根据当前病人的[核心病机]和[核心证候]给出[辩证结论]。要求[辩证结论]只有一句话，且不能包含换行符。
+---------------------
+{context_str}
+---------------------
+[核心病机]: {mechanism_str}
+[核心证候]: {syndrome_str}
+[辩证结论]: 
+"""
+        qa_diagnosis_prompt_tmpl_str_temp = qa_diagnosis_prompt_tmpl_str.format(context_str="{context_str}",
+                                                                                syndrome_str=syndrome_str,
+                                                                                mechanism_str=mechanism_str
+                                                                                )
+        prompt5 = PromptTemplate(qa_diagnosis_prompt_tmpl_str_temp)
+        index5, nodes5 = rag.load_data(["data/evalTrainTask5.json"], "final_store/store05")
+        rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index5, top_k, response_mode,
+                                                  hybrid_search, nodes5, with_hyde, qa_prompt_tmpl=prompt5)
+        response = rag_query_engine.query(mechanism_str)
+        print(response)
+        diagnosis_str = str(response)
+
+        # diagnosis = syndrome_str.split(";")
+        # diagnosis_str = ""
+        # for d in diagnosis:
+        #     if d:
+        #         diagnosis_str += d + '，'
+        # diagnosis_str = diagnosis_str[:-1]
+        # tools.printf(diagnosis_str)
         resultList.append(
             f"{case_id}@{core_clinical_info}@{mechanism_answer_str}@{syndrome_answer_str}@临证体会：{clinical_experience_str}辨证：{diagnosis_str}")
         tools.save_now(

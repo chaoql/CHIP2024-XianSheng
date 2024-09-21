@@ -6,7 +6,6 @@ from llama_index.core.retrievers import VectorIndexRetriever
 import Stemmer
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.query_engine import RetrieverQueryEngine
-from custom.retriever import CustomRetriever
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 from llama_index.core import get_response_synthesizer
 from llama_index.core.response_synthesizers.type import ResponseMode

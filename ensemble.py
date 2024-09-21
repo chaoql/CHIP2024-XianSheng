@@ -35,7 +35,3 @@ def enseTask1(submitPath, llmsubmit_path, A_path):
         for item in resultList:
             file.write(item)
 
-
-enseTask1(submitPath="submit/sub54.txt", llmsubmit_path="submit/sub53.txt", A_path="data/A榜.json")
-
-

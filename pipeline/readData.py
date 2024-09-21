@@ -57,6 +57,28 @@ def read_AJson(input_file):
     return infoList
 
 
+# def split_json_file(input_file: str, split_nums: int = 4):
+#     # 打开并读取JSON文件
+#     with open(input_file, 'r', encoding='utf-8') as file:
+#         data = json.load(file)
+#     infoList = []
+#     # 遍历数据中的每个案例
+#     for i, case in enumerate(data):
+#         case_id = case["案例编号"]
+#         clinical_info = case["临床资料"]
+#         mechanism_options = case["病机选项"]
+#         syndrome_options = case["证候选项"]
+#         infoList.append({"案例编号": case_id, "临床资料": clinical_info, "病机选项": mechanism_options,
+#                          "证候选项": syndrome_options})
+#     n = len(infoList)
+#     step = int(infoList/split_nums)
+#     b = [a[i:i+step] for i in range(0, l, step)]
+#     for i in range(n):
+#         with open(f"data/B_data_{i}.json", 'w', encoding='utf-8') as file:
+#             json.dump(infoList, file, ensure_ascii=False, indent=4)
+#     return infoList
+
+
 def read_traintask1(input_file):
     # 打开并读取JSON文件
     with open(input_file, 'r', encoding='utf-8') as file:

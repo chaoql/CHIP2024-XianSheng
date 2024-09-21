@@ -6,20 +6,17 @@ from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core import Settings
 from custom.glmfz import ChatGLM
 from custom.prompt import qa_clinical_info_prompt_tmpl_str, qa_core_mechanism_prompt_tmpl_str, \
-    qa_syndrome_infer_prompt_tmpl_str, qa_clinical_exp_prompt_tmpl_str
+    qa_syndrome_infer_prompt_tmpl_str, qa_clinical_exp_prompt_tmpl_str, new_qa_core_mechanism_prompt_tmpl_str, \
+    all_clinical_info_prompt_tmpl_str
 from llama_index.core import PromptTemplate
 from pipeline import rag
-from custom.embedding import InstructorEmbeddings
 import pipeline.readData as readData
 import tools
 import ensemble
 from tqdm import *
 import os
 import warnings
-from sentence_transformers import SentenceTransformer
-# import solution
 from llama_index.llms.dashscope import DashScope, DashScopeGenerationModels
-from modelscope import snapshot_download
 
 warnings.filterwarnings('ignore')
 if __name__ == '__main__':
@@ -40,19 +37,10 @@ if __name__ == '__main__':
     #     local_files_only=True,  # 仅加载本地模型，不尝试下载
     #     device="cuda",
     # )
-    # model_dir = snapshot_download("iic/gte_Qwen2-7B-instruct")
-    # Settings.embed_model = InstructorEmbeddings(SentenceTransformer(model_dir, trust_remote_code=True), "")
 
     # 加载大模型
     # Settings.llm = DashScope(
     #     model_name=DashScopeGenerationModels.QWEN_TURBO, api_key=config["DASHSCOPE_API_KEY"], max_tokens=1024
-    # )
-
-    # Settings.llm = ChatGLM(
-    #     api_key=config["GLM_KEY"],
-    #     model="glm-4-0520",
-    #     api_base="https://open.bigmodel.cn/api/paas/v4/",
-    #     is_chat_model=True,
     # )
     Settings.llm = ChatGLM(
         api_key=config["GLM_KEY"],
@@ -60,6 +48,7 @@ if __name__ == '__main__':
         api_base="https://open.bigmodel.cn/api/paas/v4/",
         is_chat_model=True,
     )
+
     # 设置参数
     with_hyde = False  # 是否采用假设文档
     persist_dir = "storeQ"  # 向量存储地址
@@ -68,102 +57,32 @@ if __name__ == '__main__':
     top_k = 5
     rerank_top_k = 2
     r_nums = 10  # 循环次数
-    response_mode = ResponseMode.TREE_SUMMARIZE  # 最佳实践为为TREE_SUMMARIZE
+    response_mode = ResponseMode.TREE_SUMMARIZE
     submitPath = "final_submit/sub_5.txt"
-    A_file = "data/B榜.json"
-    train_file = "data/train.json"
+    now_best_submitPath = "final_submit/sub_8.txt"
+    A_file = "rdata/B榜.json"
+    train_file = "rdata/train.json"
     infoList = readData.read_AJson(A_file)
-    qa_core_mechanism_prompt_tmpl_str = """你是一名中医专家，请使用以下检索到的上下文而不是先验知识，来根据抽取到的核心临床信息，完成病机推理。
-病机，也称病理，是中医的常见概念，指疾病的病因、病性、病位及病程中变化的要理。
-
-对于当前问题，你的推理过程应该是：
-1.根据[核心临床信息]对[病机选项]进行逐一排除；
-2.统计符合患者临床信息的[病机选项]；
-
-注意：答案不超过三个，并将最终正确的选项输出在最后一行“[病机答案]:”之后。
-
----------------------
-{context_str}
----------------------
-
-[核心临床信息]: {core_clinical_info}
-[病机选项]: {mechanism_options}
-[病机推断]:
-[核心病机]:
-[病机答案]:
-"""
-    new_qa_core_mechanism_prompt_tmpl_str = """你是一名中医专家，请使用上下文信息，根据抽取到的核心临床信息，完成病机推理。
-    
-证候和病机之间的关系：
-证候和病机二者有密切的关系。但严格说来，证候和病机的概念不同，证候是指疾病发展阶段中的病因、病位、病性、病机、病势及邪正斗争强弱等方面情况的病理概括。而病机则是人体在一定条件下，由致病因素引起的一种以正邪相争为基本形式的病理过程。一个病机可以有不同的证候，同样相同的证候亦可见于不同的病机中，所以有“同病异证”、“异病同证”的说法。如感冒病，其证候有风寒证和风热证的不同，须用不同的治法；再如头痛与眩晕虽属两病但均可出现血虚证候。因此，既要辩证，又要辨病。辨别病机要按照辨别证候所得，与多种相类似的疾病进行鉴别比较，同时进一步指导辨证，最后把那些类似的疾病一一排除，得出疾病的结论。在得出结论之后，对该病今后病机演变已有一个梗概，在这个基础上进一步辨证，便能预料其顺逆吉凶。
-
-你的推理过程应该是：
-1.根据[核心临床信息]和[核心证候]进行[病机推断]，只选择确定可以推断出的病机，不确定的病机不予考虑；
-2.根据[病机推断]筛选出[核心病机]；
-3.统计[核心病机]的数量；
-4.只留下最可能正确的核心病机，数量小于等于3个；
-5.根据[核心病机]在[病机选项]中选出对应的[病机答案]。将最终正确的选项输出在最后一行“[病机答案]:”之后。  
-
----------------------
-{context_str}
----------------------
-
-[核心临床信息]: {core_clinical_info}
-[核心证候]: {syndrome_answer_str}
-[病机选项]: {mechanism_options}
-[病机推断]: 
-[核心病机]: 
-[病机答案]: 
-"""
-    # if hybrid_search:
-    #     index1, nodes1 = rag.load_hybrid_data(["data/trainTask1.json"], "final_store_xiaobu/hybrid_store01")
-    #     # index2, nodes2 = rag.load_data(["data/bjtrain02ExtraData.json"], "store/eval02_2_extra")
-    #     index2, nodes2 = rag.load_hybrid_data(["data/trainTask2WOoptions2.json"], "final_store_xiaobu/hybrid_store02_1")
-    #     index2R, nodes2R = rag.load_hybrid_data(["data/trainTask2WOoptions3.json"],
-    #                                             "final_store_xiaobu/hybrid_store02_2")
-    #
-    #     index3, nodes3 = rag.load_hybrid_data(["data/trainTask3WOoptions.json", "data/trainExtraData.json"],
-    #                                           "final_store_xiaobu/hybrid_store03")
-    #     index4, nodes4 = rag.load_json_text_hybrid_data(
-    #         ["data/trainTask4.json"],
-    #         ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
-    #          "extra_data/doctor/中医基础理论.txt"], "final_store_xiaobu/hybrid_store04")
-    # else:
-    #     index1, nodes1 = rag.load_data(["data/trainTask1.json"], "final_store_xiaobu/store01")
-    #     # index2, nodes2 = rag.load_data(["data/bjtrain02ExtraData.json"], "store/eval02_2_extra")
-    #     index2, nodes2 = rag.load_data(["data/trainTask2WOoptions2.json"], "final_store_xiaobu/store02_1")
-    #     index2R, nodes2R = rag.load_data(["data/trainTask2WOoptions3.json"], "final_store_xiaobu/store02_2")
-    #
-    #     index3, nodes3 = rag.load_data(["data/trainTask3WOoptions.json", "data/trainExtraData.json"],
-    #                                    "final_store_xiaobu/store03")
-    #     index4, nodes4 = rag.load_json_text_data(
-    #         ["data/trainTask4.json"],
-    #         ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
-    #          "extra_data/doctor/中医基础理论.txt"], "final_store_xiaobu/store04")
     if hybrid_search:
-        index1, nodes1 = rag.load_hybrid_data(["data/trainTask1.json"], "final_store/hybrid_store01")
+        index1, nodes1 = rag.load_hybrid_data(["rdata/trainTask1.json"], "final_store/hybrid_store01")
         # index2, nodes2 = rag.load_data(["data/bjtrain02ExtraData.json"], "store/eval02_2_extra")
-        index2, nodes2 = rag.load_hybrid_data(["data/trainTask2WOoptions2.json"], "final_store/hybrid_store02_1")
-        index2R, nodes2R = rag.load_hybrid_data(["data/trainTask2WOoptions3.json"], "final_store/hybrid_store02_2")
-
-        index3, nodes3 = rag.load_hybrid_data(["data/trainTask3WOoptions.json", "data/trainExtraData.json"],
-                                              "final_store/hybrid_store03")
+        index2, nodes2 = rag.load_hybrid_data(["rdata/trainTask2WOoptions2.json"], "final_store/hybrid_store02_1")
+        index2R, nodes2R = rag.load_hybrid_data(["rdata/trainTask2WOoptions3.json"], "final_store/hybrid_store02_2")
+        index3, nodes3 = rag.load_hybrid_data(
+            ["rdata/zntrain3.json", "rdata/trainTask3WOoptions.json", "rdata/trainExtraDataTask2.json",
+             "data/bjtrain02ExtraData.json"], "final_store/hybrid_store03_2")
         index4, nodes4 = rag.load_json_text_hybrid_data(
-            ["data/trainTask4.json"],
-            ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
-             "extra_data/doctor/中医基础理论.txt"], "final_store/hybrid_store04")
+            ["rdata/trainTask4.json"], ["rdata/中医诊断学2.txt", "rdata/中医内科学.txt", "rdata/中医基础理论.txt"],
+            "final_store/hybrid_store04")
     else:
-        index1, nodes1 = rag.load_data(["data/trainTask1.json"], "final_store/store01")
-        # index2, nodes2 = rag.load_data(["data/bjtrain02ExtraData.json"], "store/eval02_2_extra")
-        index2, nodes2 = rag.load_data(["data/trainTask2WOoptions2.json"], "final_store/store02_1")
-        index2R, nodes2R = rag.load_data(["data/trainTask2WOoptions3.json"], "final_store/store02_2")
-
-        index3, nodes3 = rag.load_data(["data/trainTask3WOoptions.json", "data/trainExtraData.json"],
-                                       "final_store/store03")
+        index1, nodes1 = rag.load_data(["rdata/trainTask1.json"], "final_store/store01")
+        index2, nodes2 = rag.load_data(["rdata/trainTask2WOoptions2.json"], "final_store/store02_1")
+        index2R, nodes2R = rag.load_data(["rdata/trainTask2WOoptions3.json"], "final_store/store02_2")
+        index3, nodes3 = rag.load_data(
+            ["rdata/zntrain3.json", "rdata/trainTask3WOoptions.json", "rdata/trainExtraDataTask2.json",
+             "rdata/bjtrain02ExtraData.json"], "final_store/store03_2")
         index4, nodes4 = rag.load_json_text_data(
-            ["data/trainTask4.json"],
-            ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
-             "extra_data/doctor/中医基础理论.txt"],
+            ["rdata/trainTask4.json"], ["rdata/中医诊断学2.txt", "rdata/中医内科学.txt", "rdata/中医基础理论.txt"],
             "final_store/store04")
 
     subResult = []
@@ -175,11 +94,13 @@ if __name__ == '__main__':
             lines = file.readlines()
             resnum = len(lines)
 
+    # 读取历史最佳答案，某个病例生成错误后直接替换为历史最佳答案，防止报错打断程序运行
+    # 主要是因为LLM_reranker报错率太高了
     task1_ans = []
     task2_ans = []
     task3_ans = []
     task4_ans = []
-    with open("final_submit/sub_3.txt", 'r', encoding="utf-8", errors="ignore") as file:
+    with open(now_best_submitPath, 'r', encoding="utf-8", errors="ignore") as file:
         temp = file.readlines()
     for i in temp:
         task1_ans.append(i.split("@")[1].rstrip())
@@ -188,14 +109,16 @@ if __name__ == '__main__':
         task4_ans.append(i.split("@")[4].rstrip())
 
     for i, info in tqdm(enumerate(infoList), total=len(infoList)):
-        if i < resnum:
+        if i < resnum:  # 接续生成
             continue
+
+        global syndrome_answer_str, mechanism_str, syndrome_answer, mechanism_answer
         case_id = info["案例编号"]
         clinical_info = info["临床资料"]
         mechanism_options = info["病机选项"]
         syndrome_options = info["证候选项"]
 
-        # 直接读取答案，调试用
+        # 直接读取各题当前最佳答案，调试用
         # core_clinical_info_str = task1_ans[i]
         # tools.printf(f"core_clinical_info_str:{core_clinical_info_str}")
         #
@@ -212,17 +135,6 @@ if __name__ == '__main__':
         # diagnosis_str = task4.split("辨证")[1].replace("辨证：", "").replace("：", "")
 
         # task1
-        qa_clinical_info_prompt_tmpl_str = """你是一名中医专家，请按照检索到的案例的格式回答当前临床资料中包含的[核心临床信息]。
-要求[核心临床信息]必须包含病人的临床症状、病症名称、舌象、脉象等任何与临床相关的实体。
-答案中只列出以”;“分隔的核心信息，不含任何换行符等无关字符。
-
---------------
-{context_str}
---------------
-
-[临床资料]: {clinical_info}
-[核心临床信息]: 
-"""
         qa_clinical_info_prompt_tmpl_str_temp = qa_clinical_info_prompt_tmpl_str.format(context_str="{context_str}",
                                                                                         clinical_info=clinical_info)
         prompt1 = PromptTemplate(qa_clinical_info_prompt_tmpl_str_temp)
@@ -232,12 +144,7 @@ if __name__ == '__main__':
 
         core_clinical_info = str(response)
         tools.printf(f"core_clinical_info:{core_clinical_info}")
-        # core_clinical_info = task1_ans[i]
-        # tools.printf(f"core_clinical_info:{core_clinical_info}")
 
-        all_clinical_info_prompt_tmpl_str = """请抽取如下临床资料中与临床相关的所有实体，不包含姓名。答案只列出以”;“分隔的实体，不含任何换行符等无关字符。
-[临床资料]: {clinical_info}
-"""
         all_clinical_info_prompt_tmpl_str_temp = all_clinical_info_prompt_tmpl_str.format(clinical_info=clinical_info)
         prompt1_1 = PromptTemplate(all_clinical_info_prompt_tmpl_str_temp)
         rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index1, top_k, response_mode,
@@ -259,21 +166,19 @@ if __name__ == '__main__':
                 core_clinical_info_str += info + ";"
         print(len(core_clinical_info_result))
 
-        global syndrome_answer_str
-        global syndrome_answer
-
-        for i in range(r_nums):
+        for j in range(r_nums):
             # task2
             try:
-                if i == 0:
+                if j == 0:
                     qa_core_mechanism_prompt_tmpl_str_temp = qa_core_mechanism_prompt_tmpl_str.format(
                         context_str="{context_str}",
                         core_clinical_info=core_clinical_info,
                         mechanism_options=mechanism_options,
                     )
                     prompt2 = PromptTemplate(qa_core_mechanism_prompt_tmpl_str_temp)
-                    rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2, top_k, response_mode,
-                                                              hybrid_search, nodes2, with_hyde, qa_prompt_tmpl=prompt2)
+                    rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2, top_k,
+                                                              response_mode, hybrid_search, nodes2, with_hyde,
+                                                              qa_prompt_tmpl=prompt2)
                     response = rag_query_engine.query(core_clinical_info)  #
                 else:
                     syndrome_answer_str = tools.extract_core_mechanism(syndrome_options, syndrome_answer)
@@ -284,7 +189,8 @@ if __name__ == '__main__':
                         syndrome_answer_str=syndrome_answer_str
                     )
                     prompt2 = PromptTemplate(qa_core_mechanism_prompt_tmpl_str_temp)
-                    rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2R, top_k, response_mode,
+                    rag_query_engine = rag.Build_query_engine(with_LLMrerank, rerank_top_k, index2R, top_k,
+                                                              response_mode,
                                                               hybrid_search, nodes2R, with_hyde, qa_prompt_tmpl=prompt2)
                     response = rag_query_engine.query(syndrome_answer_str)
 
@@ -300,29 +206,6 @@ if __name__ == '__main__':
                 tools.printf(mechanism_str)
 
             # task3
-            qa_syndrome_infer_prompt_tmpl_str = """
-你是一名中医专家，请使用检索到的症状相似的其他患者的历史病例信息，根据患者[核心临床信息]和[核心病机]完成[证候推断]。
-
-这是一道选择题，你的推理过程应该是：
-1.根据[历史病例]、患者的[核心临床信息]和[核心病机]进行[证候推断]，每个证候必须从患者的症状表现、脉、舌三方面考量，不能片面判断；
-2.根据[证候推断]筛选出最有可能正确的一个或两个[核心证候]；
-3.根据[核心证候]在[证候选项]中选出对应的[证候答案]；
-
-注意：回答必须对应到[证候选项]中的选项对应的字母，筛选出的正确选项最多选2个。将答案输出在最后一行的“[证候答案]:”之后。
-
-
-[历史病例]:
----------------------
-{context_str}
----------------------
-
-
-[核心临床信息]: {core_clinical_info}
-[核心病机]: {mechanism_str}
-[证候选项]: {syndrome_options}
-[核心证候]:
-[证候答案]:
-"""
             qa_syndrome_infer_prompt_tmpl_str_temp = qa_syndrome_infer_prompt_tmpl_str.format(
                 context_str="{context_str}",
                 core_clinical_info=core_clinical_info,
@@ -377,4 +260,4 @@ if __name__ == '__main__':
     print(f"start_time-end_time:{(end_time - start_time) / 60.0}min")
     tools.saveTxt("submit/subTemp.txt", subResult)
 
-    ensemble.enseTask1(submitPath=submitPath, llmsubmit_path=submitPath, A_path=A_file)
+    ensemble.enseTask1(submitPath=submitPath, llmsubmit_path=submitPath, A_path=A_file)  # 第一问补缺

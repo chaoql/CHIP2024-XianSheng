@@ -169,7 +169,6 @@ low-level_rag.ipynb
 post_g.ipynb
 submit
 final_store
-final_store_xiaobu
 final_submit
 BAAI/
 store
@@ -184,5 +183,6 @@ ft_sub
 tcmoc
 llsub
 xiaobu_store
-post_g.ipynb
 main_test.py
+FTDataPre.py
+

@@ -79,6 +79,7 @@ def load_json_text_data(json_files, text_files, persist_dir):
         index4.storage_context.persist(persist_dir=persist_dir)
     return index4, nodes4
 
+
 def load_all_data(input_dir, persist_dir):
     documents = SimpleDirectoryReader(input_dir=input_dir).load_data()
     node_parser = SentenceSplitter(chunk_size=512, chunk_overlap=20)
@@ -150,7 +151,11 @@ def load_hybrid_data(input_file, persist_dir):
     return index, nodes
 
 
-def Build_query_engine(with_LLMrerank, rerank_top_k, index, top_k, response_mode, hybrid_search, nodes, with_hyde,
+from llama_index.core.indices.vector_store.base import VectorStoreIndex
+
+
+def Build_query_engine(with_LLMrerank, rerank_top_k, index: VectorStoreIndex, top_k, response_mode, hybrid_search,
+                       nodes, with_hyde,
                        qa_prompt_tmpl):
     rag_query_engine = build_query_engine(with_LLMrerank, rerank_top_k, index, response_mode,
                                           qa_prompt_tmpl, hybrid_search, top_k, nodes)

@@ -1,8 +1,8 @@
+# 测评调试
 import json
 import solution
 from pipeline import rag
 import pipeline.readData as readData
-from llama_index.core.response_synthesizers.type import ResponseMode
 import os
 from dotenv import load_dotenv, find_dotenv
 from dotenv import dotenv_values
@@ -10,7 +10,6 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core import Settings
 from custom.glmfz import ChatGLM
-from custom.kimi import ChatKIMI
 from llama_index.llms.openai import OpenAI
 from rouge_chinese import Rouge
 import jieba
@@ -106,52 +105,31 @@ def evalTask4(result, train_path):
     return all_score
 
 
-# def evalTask4(result, train_path):
-#     with open(train_path, 'r', encoding='utf-8', errors='ignore') as file:
-#         train_data = json.load(file)
-#     all_score = 0.0
-#     for i, res in enumerate(result):
-#         oknums = 0
-#         score = 0.0
-#         resList = res.split(";")
-#         trainList = train_data[i]['证候答案'].split(";")
-#         allnums = len(trainList)
-#         for re in resList:
-#             if re in trainList:
-#                 oknums += 1
-#         score = oknums / (allnums + len(resList) - oknums)
-#         all_score += score
-#         print(f"案例{i + 1}: {score}")
-#     print(f"task3总得分: {all_score}/50")
-#     return all_score
-
-
 _ = load_dotenv(find_dotenv())  # 导入环境
 config = dotenv_values(".env")
 # 加载嵌入模型
-# Settings.embed_model = HuggingFaceEmbedding(
-#     model_name="BAAI/bge-large-zh-v1.5",
-#     cache_folder="./BAAI/",
-#     embed_batch_size=128,
-#     local_files_only=True,  # 仅加载本地模型，不尝试下载
-#     device="cuda",
-# )
 Settings.embed_model = HuggingFaceEmbedding(
-    model_name="lier007/xiaobu-embedding-v2",
-    cache_folder="BAAI/",
+    model_name="BAAI/bge-large-zh-v1.5",
+    cache_folder="./BAAI/",
     embed_batch_size=128,
     local_files_only=True,  # 仅加载本地模型，不尝试下载
     device="cuda",
 )
+# Settings.embed_model = HuggingFaceEmbedding(
+#     model_name="lier007/xiaobu-embedding-v2",
+#     cache_folder="BAAI/",
+#     embed_batch_size=128,
+#     local_files_only=True,  # 仅加载本地模型，不尝试下载
+#     device="cuda",
+# )
 # 加载大模型
 Settings.llm = ChatGLM(
     api_key=config["GLM_KEY"],
-    model="GLM-4-0520",
+    model="glm-4-plus",
     api_base="https://open.bigmodel.cn/api/paas/v4/",
     is_chat_model=True,
     context_window=6000,
 )
-
 
 # Settings.llm = OpenAI(model="gpt-4o")
 
@@ -168,7 +146,7 @@ hybrid_search = False  # 是否采用混合检索
 with_LLMrerank = True
 top_k = 5
 rerank_top_k = 2
-response_mode = ResponseMode.COMPACT  # 最佳实践为为TREE_SUMMARIZE
+response_mode = ResponseMode.TREE_SUMMARIZE  # 最佳实践为为TREE_SUMMARIZE
 hybrid_mode = "OR"
 submitPath = "submit/eval1"
 train_file = "data/train.json"
@@ -219,14 +197,14 @@ for i, case in enumerate(data):
 # index2, nodes2 = rag.load_hybrid_data(["data/bjtrain02ExtraData.json"], "store/hybrid_eval02_2_extra")
 
 # index2, nodes2 = rag.load_data(["data/evalTrainTask2_2.json"], "store/eval02_2")
-index2, nodes2 = rag.load_data(["data/evalTrainTask2_3.json"], "store/xiaobu_eval02_3")
+# index2, nodes2 = rag.load_data(["data/evalTrainTask2_3.json"], "store/xiaobu_eval02_3")
 # index2, nodes2 = rag.load_txt_data(
 #     ["extra_data/doctor/中医内科学.txt", "extra_data/doctor/中医基础理论.txt", "extra_data/doctor/中医诊断学.txt"],
 #     "store/eval02_doctor")
 
 
-index3, nodes3 = rag.load_data(["data/evalTrainTask3.json", "data/trainExtraData.json"],
-                               "store/xiaobu_eval03")
+# index3, nodes3 = rag.load_data(["data/evalTrainTask3.json", "data/trainExtraData.json"],
+#                                "store/xiaobu_eval03")
 
 # index3, nodes3 = rag.load_data(
 #     ["data/zntrain3.json", "data/evalTrainTask3.json", "data/trainExtraDataTask2.json",
@@ -241,43 +219,26 @@ index3, nodes3 = rag.load_data(["data/evalTrainTask3.json", "data/trainExtraData
 #     ["data/trainTask3WOoptions.json", "data/trainExtraData.json", "data/bjtrain02ExtraData.json"],
 #     "store/storeExtra01")
 #
-from llama_index.core import PromptTemplate, get_response_synthesizer, StorageContext, VectorStoreIndex, \
-    SimpleDirectoryReader, Settings
-from llama_index.core.node_parser import JSONNodeParser
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core import load_index_from_storage
-
-top_k = 5
-rerank_top_k = 2
-documents = SimpleDirectoryReader(input_files=["data/trainTask4.json"]).load_data()
-node_parser = JSONNodeParser()
-nodes4_1 = node_parser.get_nodes_from_documents(documents, show_progress=True)
-documents = SimpleDirectoryReader(input_files=["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
-                                               "extra_data/doctor/中医基础理论.txt", ]).load_data()
-node_parser = SentenceSplitter(chunk_size=512, chunk_overlap=20)
-nodes4_2 = node_parser.get_nodes_from_documents(documents, show_progress=True)
-nodes4 = nodes4_1 + nodes4_2
-# indexing & storing
-try:
-    storage_context = StorageContext.from_defaults(persist_dir="store/xiaohu_store04_4")
-    index4 = load_index_from_storage(storage_context, show_progress=True)
-except:
-    index4 = VectorStoreIndex(nodes=nodes4, show_progress=True)
-    index4.storage_context.persist(persist_dir="store/xiaohu_store04_4")
+index4, nodes4 = rag.load_json_text_data(
+    ["data/trainTask4.json"],
+    ["extra_data/doctor/中医诊断学2.txt", "extra_data/doctor/中医内科学.txt",
+     "extra_data/doctor/中医基础理论.txt"], "final_store/store04")
 # index4, nodes4 = rag.load_data(["data/trainTask4_2.json"], "store/store04")
 
 # 生成答案
-# solution.task1Solution(infoList, False, rerank_top_k, hybrid_mode, index1, top_k, hybrid_search,
-#                        nodes1, with_hyde, submitPath)
+# solution.task1Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index1, top_k, hybrid_search,
+#                        nodes1, with_hyde, submitPath, response_mode)
 # solution.task2Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index2, top_k, hybrid_search,
 #                        nodes2, with_hyde, submitPath)
 # solution.task3Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index3, top_k, hybrid_search,
 #                        nodes3, with_hyde, submitPath)
 solution.task4Solution(infoList, with_LLMrerank, rerank_top_k, hybrid_mode, index4, top_k, hybrid_search,
-                       nodes4, with_hyde, submitPath)
+                       nodes4, with_hyde, submitPath, response_mode)
+
+
 
 # 读取生成的答案
-# result1 = load_all_evalData(submitPath + "-1.txt", 1)
+# result1 = load_all_evalData(submitPath + "-1-1.txt", 1)
 # result2 = load_all_evalData(submitPath + "-2.txt", 2)
 # result3 = load_all_evalData(submitPath + "-3.txt", 3)
 result4 = load_all_evalData(submitPath + "-4.txt", 4)
